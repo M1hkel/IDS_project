@@ -13,7 +13,7 @@ def get_data(startlink, deal_type):
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-    service = Service("D:/WebDrivers/chromedriver.exe")  # Replace with your ChromeDriver path
+    service = Service("/home/m1hkel/Documents/WebDrivers/chromedriver") # Replace with your ChromeDriver path
     driver = webdriver.Chrome(service=service, options=options)
 
     # Cities for reference
@@ -142,7 +142,7 @@ for deal_type, base_link, pagination_link in deal_types:
     get_data(base_link, deal_type)
     try:
         count = 50
-        while True:
+        while count <= 10000:
             get_data(pagination_link.format(count), deal_type)
             count += 50
     except Exception as e:
