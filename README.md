@@ -7,5 +7,6 @@ We got the idea from a car website where it showed a value rating for each listi
 
 After cloning our code from the repository you can simply run the GUI by running all cells in the model.ipynb file.
 
-Data.csv - Real estate listings scraped by the scraper
-model.ipynb - Contains the main code for the model (Cleaning data, training model, GUI)
+Data.csv - Real estate listings scraped by the scraper.
+
+model.ipynb - Contains the main code for the model (Cleaning data, training model, GUI).
