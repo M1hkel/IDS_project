@@ -13,14 +13,13 @@ def get_data(startlink, deal_type):
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-    service = Service("/home/m1hkel/Documents/WebDrivers/chromedriver") # Replace with your ChromeDriver path
+    service = Service("/home/m1hkel/Documents/WebDrivers/chromedriver")  # Replace with your ChromeDriver path
     driver = webdriver.Chrome(service=service, options=options)
 
     # Cities for reference
     linnad = ["Tartu", "Tallinn", "Pärnu", "Põlva", "Viljandi", "Narva", "Haapsalu", "Rakvere", "Türi", "Paide", "Tapa", "Võru"]
 
     # Define deal type characteristics
-    is_apartment = "Apartment" if deal_type in [1, 2] else "House"
     is_for_sale = "For Sale" if deal_type in [1, 3] else "For Rent"
 
     try:
@@ -30,17 +29,25 @@ def get_data(startlink, deal_type):
 
             # Wait until articles are loaded
             WebDriverWait(driver, 10).until(
-                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "article.default.object-type-apartment"))
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "article.default"))
             )
 
             # Get all articles on the current page
-            articles = driver.find_elements(By.CSS_SELECTOR, "article.default.object-type-apartment")
+            articles = driver.find_elements(By.CSS_SELECTOR, "article.default")
 
             for index, article in enumerate(articles):
                 try:
                     # Refresh the article list in case DOM changed
-                    articles = driver.find_elements(By.CSS_SELECTOR, "article.default.object-type-apartment")
+                    articles = driver.find_elements(By.CSS_SELECTOR, "article.default")
                     article = articles[index]
+
+                    # Determine the type of property
+                    if "object-type-house" in article.get_attribute("class"):
+                        property_type = "House"
+                    elif "object-type-apartment" in article.get_attribute("class"):
+                        property_type = "Apartment"
+                    else:
+                        continue
 
                     # Extract the URL for the detail page
                     relative_url = article.get_attribute("data-object-url")
@@ -74,6 +81,7 @@ def get_data(startlink, deal_type):
                     # Extract details from the meta table
                     data = {}
                     town = ""
+                    year_built = "N/A"  # Default value if year built is not found
                     for i in linnad:
                         if i in property_title:
                             town = i
@@ -84,6 +92,9 @@ def get_data(startlink, deal_type):
                                     key = th_element[0].text.strip()  # Extract header text
                                     value = td_element[0].text.strip()  # Extract corresponding value
                                     data[key] = value
+
+                            # Extract year built if available
+                            year_built = data.get("Ehitusaasta", "N/A")
 
                     # Extract relevant details
                     amount_of_rooms = data.get('Tube', 'N/A')
@@ -99,7 +110,8 @@ def get_data(startlink, deal_type):
                             amount_of_rooms,
                             surface_area,
                             floor,
-                            is_apartment,
+                            year_built,
+                            property_type,
                             is_for_sale
                         ])
 
@@ -128,7 +140,7 @@ def get_data(startlink, deal_type):
 # Create or append to the CSV file with a header row if not exists
 with open("Data.csv", mode="w", newline="", encoding="utf-8") as file:
     writer = csv.writer(file)
-    writer.writerow(["Town", "Price", "Amount of Rooms", "Surface Area", "Floor/Floors", "Type", "Sale/Rent"])
+    writer.writerow(["Town", "Price", "Amount of Rooms", "Surface Area", "Floor/Floors", "Year Built", "Type", "Sale/Rent"])
 
 # Loop through different deal types and paginated URLs
 deal_types = [
@@ -142,7 +154,7 @@ for deal_type, base_link, pagination_link in deal_types:
     get_data(base_link, deal_type)
     try:
         count = 50
-        while count <= 10000:
+        while count <= 100000:
             get_data(pagination_link.format(count), deal_type)
             count += 50
     except Exception as e:
